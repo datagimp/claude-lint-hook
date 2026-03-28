@@ -91,19 +91,31 @@ class JavaScriptLinter(Linter):
                             fixed=False,
                             issues=issues,
                         )
+                    else:
+                        # Valid JSON with no issues
+                        return LinterResult(success=True, fixed=False, issues=[])
             except (json.JSONDecodeError, KeyError):
                 pass
 
-            # Fallback: parse plain text output
-            issues = [line for line in stdout.split("\n") if line.strip()]
-            if not issues and stderr:
-                issues = [line for line in stderr.split("\n") if line.strip()]
+            # Fallback: parse plain text output (skip JSON-looking output)
+            if not stdout.strip().startswith("["):
+                issues = [line for line in stdout.split("\n") if line.strip()]
+                if not issues and stderr and not stderr.strip().startswith("["):
+                    issues = [line for line in stderr.split("\n") if line.strip()]
 
-            return LinterResult(
-                success=True,
-                fixed=False,
-                issues=issues if issues else ["Unknown linting issue"],
-            )
+                if issues:
+                    return LinterResult(
+                        success=True,
+                        fixed=False,
+                        issues=issues,
+                    )
+
+        # No issues found
+        return LinterResult(
+            success=True,
+            fixed=False,
+            issues=[],
+        )
 
         # No issues found
         return LinterResult(
