@@ -42,14 +42,13 @@ def handle_file(file_path: str, cwd: str) -> Dict[str, Any]:
     # Step 1: Attempt to fix issues
     fix_result = linter.fix(file_path, cwd)
 
-    if not fix_result.success and fix_result.error:
-        # Fix command failed - allow with warning
+    # If fix failed catastrophically (command not found, etc), allow with warning
+    if not fix_result.success and fix_result.error and "command not found" in fix_result.error.lower():
         import sys
-
-        print(f"Warning: Linter fix failed: {fix_result.error}", file=sys.stderr)
+        print(f"Warning: Linter not available: {fix_result.error}", file=sys.stderr)
         return {"decision": "allow"}
 
-    # Step 2: Check for remaining issues
+    # Step 2: Check for remaining issues (even if fix had warnings)
     check_result = linter.check(file_path, cwd)
 
     if check_result.has_issues:
