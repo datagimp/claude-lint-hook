@@ -140,16 +140,18 @@ if [ "$SKIP_LINTERS" = false ]; then
         info "✓ ruff already installed"
     fi
 
-    # Check for eslint (only if package.json exists in current dir or parent)
-    if [ "$INIT_CURRENT" = true ]; then
-        if [ -f "package.json" ]; then
-            if ! check_command eslint; then
-                info "Installing eslint (JavaScript/TypeScript linter)..."
-                npm install -D eslint || warn "Failed to install eslint. Install manually with: npm install -D eslint"
-            else
-                info "✓ eslint already available"
-            fi
+    # Check for eslint (if we're in a node project)
+    if [ -f "package.json" ]; then
+        # Check if eslint is in node_modules/.bin
+        if [ ! -f "node_modules/.bin/eslint" ]; then
+            info "Installing eslint (JavaScript/TypeScript linter)..."
+            npm install -D eslint @typescript-eslint/parser @typescript-eslint/eslint-plugin 2>/dev/null || warn "Failed to install eslint. Install manually with: npm install -D eslint @typescript-eslint/parser @typescript-eslint/eslint-plugin"
+        else
+            info "✓ eslint already installed in this project"
         fi
+    elif [ "$INIT_CURRENT" = true ]; then
+        warn "No package.json found - skipping eslint installation"
+        warn "To enable TypeScript/JavaScript linting, run 'npm install -D eslint' in your project"
     fi
 else
     info "Skipping linter installation (--skip-linters)"
