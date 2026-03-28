@@ -55,14 +55,15 @@ def command_exists(command: str, cwd: str) -> bool:
         True if command exists, False otherwise
     """
     import shutil
+    import os
 
     # First check in PATH
     if shutil.which(command):
         return True
 
-    # For Node.js tools, check common local locations
-    node_modules_bin = f"{cwd}/node_modules/.bin/{command}"
-    if shutil.which(node_modules_bin):
+    # For Node.js tools, check local node_modules/.bin
+    node_modules_bin = os.path.join(cwd, "node_modules", ".bin", command)
+    if os.path.isfile(node_modules_bin) and os.access(node_modules_bin, os.X_OK):
         return True
 
     return False

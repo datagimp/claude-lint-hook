@@ -1,5 +1,6 @@
 """JavaScript/TypeScript linter using ESLint."""
 
+import os
 from typing import List
 
 from .base import Linter, LinterResult
@@ -15,6 +16,15 @@ class JavaScriptLinter(Linter):
     def extensions(self) -> List[str]:
         return [".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs"]
 
+    def _get_eslint_path(self, cwd: str) -> str:
+        """Get the path to eslint executable."""
+        # Check local node_modules/.bin first
+        local_eslint = os.path.join(cwd, "node_modules", ".bin", "eslint")
+        if os.path.isfile(local_eslint) and os.access(local_eslint, os.X_OK):
+            return local_eslint
+        # Fall back to global eslint
+        return "eslint"
+
     def is_available(self, cwd: str) -> bool:
         """Check if eslint is available."""
         return command_exists("eslint", cwd)
@@ -25,8 +35,9 @@ class JavaScriptLinter(Linter):
 
         Runs: eslint --fix
         """
+        eslint_path = self._get_eslint_path(cwd)
         success, stdout, stderr = run_command(
-            ["eslint", "--fix", file_path],
+            [eslint_path, "--fix", file_path],
             cwd=cwd,
             timeout=30,
         )
@@ -44,8 +55,9 @@ class JavaScriptLinter(Linter):
 
         Returns list of issues found.
         """
+        eslint_path = self._get_eslint_path(cwd)
         success, stdout, stderr = run_command(
-            ["eslint", "--format", "json", file_path],
+            [eslint_path, "--format", "json", file_path],
             cwd=cwd,
             timeout=30,
         )
